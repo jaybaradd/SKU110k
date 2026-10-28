@@ -2,7 +2,7 @@
 
 This project detects individual products in a retail shelf photo, groups products with similar packaging, and returns colored bounding boxes and structured results. It was built for the TNSQAI data science intern assignment.
 
-**Status:** The Streamlit UI was tested against a Modal T4 development service. The GPU API was deployed on 29 October 2026 and passed a real shelf-image request. Private repository submission remains.
+**Status:** The GPU API is deployed on a Modal T4 and passed a real shelf-image request. The Streamlit UI was tested against the Modal T4 development service.
 
 ## Architecture
 
@@ -166,13 +166,12 @@ The [notebook](notebook/sku-110k-training.ipynb) contains the dataset audit, YOL
 
 The notebook's Kaggle paths are historical training paths, not deployment requirements. The full official test split has not been evaluated as a held-out benchmark in this project.
 
-## Limitations and remaining submission work
+## Limitations and future work
 
 - Appearance groups are not verified brand identities. Group IDs are local to one image, and no brand-label accuracy is available.
 - Average-linkage grouping uses an O(N²) distance matrix. Similar packages can cause false merges; different views or package designs can cause false splits.
 - The detector may miss tiny or occluded products, and inference caps output at 750 detections.
 - The live endpoint has no authentication. It is subject to the author's Modal workspace limits and may become unavailable when those limits are reached.
-- Private repository submission is still pending. The development service was tested and stopped; the final deployed API passed one real request.
 - Optional future work: labeled brand evaluation, better text recognition, embedding fine-tuning, and an RF-DETR comparison.
 
 SKU-110K, pretrained YOLO11s, and pretrained DINOv2 each have upstream terms. Keep the submission repository private as the assignment requires and review those terms before wider redistribution.
