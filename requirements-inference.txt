@@ -1,3 +1,19 @@
-# Modal GPU inference dependencies will be pinned after compatibility checks.
-# Planned packages: torch, torchvision, ultralytics, timm, scikit-learn,
-# numpy, Pillow, fastapi, and python-multipart.
+# Modal inference image: Linux x86_64, Python 3.11.
+# Keep the CUDA build explicit so pip does not select a CPU-only torch wheel.
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+# Match the PyTorch and Ultralytics versions recorded in the training notebook.
+torch==2.11.0+cu128
+torchvision==0.26.0+cu128
+ultralytics==8.4.190
+
+# DINOv2 feature extraction and appearance grouping.
+timm==1.0.30
+scikit-learn==1.7.2
+numpy==2.2.6
+Pillow==11.3.0
+
+# FastAPI upload and response validation; these versions passed local API tests.
+fastapi==0.162.0
+pydantic==2.9.2
+python-multipart==0.0.32

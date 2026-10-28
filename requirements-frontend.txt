@@ -1,1 +1,4 @@
-# Streamlit client dependencies will be pinned when the frontend is implemented.
+# Local Streamlit client (Python 3.11); all model inference runs remotely.
+streamlit==1.66.1
+requests==2.34.2
+python-dotenv==1.2.4
