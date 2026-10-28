@@ -58,6 +58,8 @@ Training and validation loss histories are in [`results.png`](reports/training_a
 
 The service uses `weights/best.pt` (SHA-256: `696797b741735462c297c0d8d1a68e2393d9fddf4cccf0b016863350dc2ad8a6`). `weights/last.pt` is retained as a training artifact. Retraining is not necessary for inference.
 
+The [training summary](reports/training_summary.md) records the dataset audit, run settings, and per-epoch results. The [model card](weights/MODEL_CARD.md) records checkpoint provenance and use limits.
+
 ## Appearance grouping and inference
 
 For each image, [the inference pipeline](inference/pipeline.py):
@@ -71,13 +73,15 @@ For each image, [the inference pipeline](inference/pipeline.py):
 
 The threshold was selected using a small set of hand-picked visual comparisons, not a labeled brand benchmark. CLIP and OCR were also explored in the notebook; CLIP made questionable visual merges and OCR performed poorly on small crops. DINOv2 was **not** fine-tuned on SKU-110K. Because SKU-110K has no brand labels, this project does not claim measured brand recognition accuracy.
 
+The [grouping experiments](reports/grouping_experiments.md) show the selected pairs, linkage comparison, and threshold tradeoff.
+
 ## FastAPI request and response
 
 The service exposes `POST /predict`. Send a JPEG or PNG using multipart form field `file`. The API accepts at most **20 MiB** and **20 million decoded pixels**. It returns 4xx for invalid uploads and 5xx for inference failures without exposing model stack traces to clients.
 
 ~~~bash
 curl -sS -X POST "https://jaydharmishtha--tnsqai-retail-shelf-serve.us-east.modal.run/predict" \
-  -F "file=@path/to/shelf.jpg;type=image/jpeg" \
+  -F "file=@shelf_test_images/validation/val_100.jpg;type=image/jpeg" \
   -o prediction.json
 ~~~
 
@@ -109,7 +113,7 @@ modal serve modal_app.py
 modal deploy modal_app.py
 ~~~
 
-The deployed API is **https://jaydharmishtha--tnsqai-retail-shelf-serve.us-east.modal.run/predict**. Its [Modal deployment](https://modal.com/apps/jaydharmishtha/main/deployed/tnsqai-retail-shelf) is named `tnsqai-retail-shelf` and uses a T4. `modal serve` is for development; `modal deploy` creates a deployment whose URL remains addressable after the local terminal closes. Modal functions normally scale to zero when idle, but container startup, requests, and the warm period can incur usage. This endpoint has no authentication, so anyone with the URL can trigger usage. The author's workspace has usage and out-of-pocket limits configured; requests may stop working when a limit is reached. Reviewers can still deploy the checkpoint in their own workspace. See [Modal's deployment guide](https://modal.com/docs/guide/managing-deployments) and [budget guide](https://modal.com/docs/guide/budgets).
+The [deployed API](https://jaydharmishtha--tnsqai-retail-shelf-serve.us-east.modal.run/predict) is named `tnsqai-retail-shelf` and uses a T4. `modal serve` is for development; `modal deploy` creates a deployment whose URL remains addressable after the local terminal closes. Modal functions normally scale to zero when idle, but container startup, requests, and the warm period can incur usage. This endpoint has no authentication, so anyone with the URL can trigger usage. The author's workspace has usage and out-of-pocket limits configured; requests may stop working when a limit is reached. See [Modal's deployment guide](https://modal.com/docs/guide/managing-deployments) and [budget guide](https://modal.com/docs/guide/budgets).
 
 One `val_100.jpg` request to the deployed `/predict` URL returned HTTP 200, **144 products**, **82 groups**, and a decodable 2448 × 3264 annotated JPEG. The first post-deploy request took **23.39 seconds** at the client, including network and startup overhead; the response reported **6,748.52 ms** of server inference and encoding. These are measurements from one request, not a latency benchmark.
 
@@ -145,22 +149,19 @@ The CPU-only test suite covers grouping, a pipeline with fake models, and the Fa
 python -m unittest discover -s tests -v
 ~~~
 
-For a fresh CPU-only Python 3.11 test environment, install the frontend requirements plus the tested CPU dependencies below. Do **not** install `requirements-inference.txt` on an Intel Mac; its CUDA PyTorch wheels are for Modal's Linux image.
+For a fresh CPU-only Python 3.11 test environment, install the [development requirements](requirements-dev.txt). Do **not** install `requirements-inference.txt` on an Intel Mac; its CUDA PyTorch wheels are for Modal's Linux image.
 
 ~~~bash
-python -m pip install -r requirements-frontend.txt
-python -m pip install \
-  numpy==1.26.4 scikit-learn==1.5.2 Pillow==10.4.0 \
-  fastapi==0.162.0 pydantic==2.9.2 python-multipart==0.0.32 httpx==0.28.1
+python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ~~~
 
 ## Reproducing training
 
-The [notebook](notebook/sku-110k-training.ipynb) contains the dataset audit, YOLO label conversion, small pilot runs, JPEG recovery, full YOLO11s training run, validation results, and grouping experiments.
+The [notebook](notebook/sku-110k-training.ipynb) records the dataset audit, YOLO label conversion, small pilot runs, JPEG recovery, full YOLO11s training run, validation results, and grouping experiments. Its pilot and artifact-backup cells are historical; evaluators do not need to run the notebook to use the included checkpoint and deployed API.
 
 1. Obtain `SKU110K_fixed` from the [SKU-110K authors](https://github.com/eg4000/SKU110K_CVPR19) or an equivalent Kaggle copy. The dataset is not bundled here.
-2. Run the notebook on a GPU system with the dataset mounted. Update its historical Kaggle `ROOT` path if your mount differs. Execute the audit, conversion, JPEG recovery, and full-training cells in order. The conversion creates `data.yaml` and normalized YOLO labels in working storage.
+2. If reproducing training, run the relevant notebook cells on a GPU system with the dataset mounted. Update its historical Kaggle `ROOT` path if your mount differs. Execute the audit, full-data conversion, JPEG recovery, and full-training cells in order; skip the historical pilot runs. The conversion creates `data.yaml` and normalized YOLO labels in working storage.
 3. Compare the exported [training arguments](reports/training_artifacts/args.yaml), [per-epoch metrics](reports/training_artifacts/results.csv), and plots. Environment and GPU differences can affect exact results.
 4. To reproduce inference without retraining, use the included `weights/best.pt` and deploy `modal_app.py` as above.
 

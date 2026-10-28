@@ -1,1 +1,10 @@
-# Local development and CPU test dependencies will be pinned when tests are added.
+# CPU-only local development and tests on Python 3.11.
+# The Modal GPU image has a separate dependency file.
+-r requirements-frontend.txt
+numpy==1.26.4
+scikit-learn==1.5.2
+Pillow==10.4.0
+fastapi==0.162.0
+pydantic==2.9.2
+python-multipart==0.0.32
+httpx==0.28.1
