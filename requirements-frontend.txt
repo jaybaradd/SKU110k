@@ -1,0 +1,1 @@
+# Streamlit client dependencies will be pinned when the frontend is implemented.
